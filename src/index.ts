@@ -1,4 +1,4 @@
-import express, { ErrorRequestHandler } from "express";
+import express from "express";
 import { getEnrichedCountries } from "./countries";
 import { getDatasets } from "./datasets";
 import { getCountryByISO, getCountryDatasetsByISO } from "./countryDatasets";
@@ -17,19 +17,6 @@ const app = express();
 
 app.use(helmet());
 app.use(cors());
-
-const logErrors: ErrorRequestHandler = (err, _req, _res, next) => {
-  console.error(err.stack);
-  next(err);
-};
-
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  res.status(500);
-  res.render("error", { error: err });
-};
-
-app.use(logErrors);
-app.use(errorHandler);
 
 const APP_NAME = "Loqu API";
 const VERSION = "0.1.0";
@@ -77,13 +64,13 @@ app.get("/countries/:iso/datasets", async (req, res, next) => {
   }
 });
 
-app.get("/entity/:iri/datasets", async (req, res) => {
+app.get("/entity/:iri/datasets", async (req, res, next) => {
   try {
     const out = await getDatasets(req.params.iri);
     res.contentType("application/ld+json");
     res.send(out);
   } catch (error) {
-    res.status(500).json({ error: error.toString() });
+    next(error)
   }
 });
 
