@@ -1,6 +1,7 @@
 import SparqlClient from "sparql-http-client/ParsingClient";
 import { ResultRow } from "sparql-http-client/ResultParser";
 import { Quad } from "rdf-js";
+import { VERSION } from "./version";
 
 export const commonPrefixes = `
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -18,10 +19,11 @@ export async function sparqlQuery<T extends "select" | "construct" = "select">(
   queryType: T = "select" as any,
   operation: "get" | "postUrlencoded" | "postDirect" = "get"
 ): Promise<T extends "select" ? ResultRow[] : Quad[]> {
-  const client = new SparqlClient({ endpointUrl: endpoint });
+  const client = new SparqlClient({ endpointUrl: endpoint, headers: {
+    "User-Agent": `LoquAPI/${VERSION} (https://github.com/loqudata/api) sparql-http-client/2.3`
+  } });
 
-  const bindings = await client.query[queryType](commonPrefixes + query, {
+  return client.query[queryType](commonPrefixes + query, {
     operation,
-  });
-  return bindings as any;
+  }) as any;
 }

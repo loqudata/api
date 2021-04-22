@@ -41,27 +41,31 @@ export async function getCountries(
     } GROUP BY ?country
     # LIMIT 10
     `;
-  const wd = await sparqlQuery(
-    Endpoints.WIKIDATA,
-    wikiDataQuery,
-    "select",
-    "postDirect"
-  );
-  const wikiDataOut = wd.map(bindings => ({
-    iri: bindings["country"].value,
-    name: bindings["label"].value,
-    iso: bindings["isoCode"].value,
-    flag: bindings["flagURI"].value,
-    flagChar: bindings["flagChar"] ? bindings["flagChar"].value : undefined,
-    numSeries: countries.filter(s => s.iri == bindings["country"].value)[0]
-      .numSeries,
-    numDataset: countries.filter(s => s.iri == bindings["country"].value)[0]
-      .numDataset,
-  }));
 
-  return wikiDataOut;
+  try {
+    const wd = await sparqlQuery(
+      Endpoints.WIKIDATA,
+      wikiDataQuery,
+      "select",
+      "postDirect"
+    );
+    const wikiDataOut = wd.map(bindings => ({
+      iri: bindings["country"].value,
+      name: bindings["label"].value,
+      iso: bindings["isoCode"].value,
+      flag: bindings["flagURI"].value,
+      flagChar: bindings["flagChar"] ? bindings["flagChar"].value : undefined,
+      numSeries: countries.filter(s => s.iri == bindings["country"].value)[0]
+        .numSeries,
+      numDataset: countries.filter(s => s.iri == bindings["country"].value)[0]
+        .numDataset,
+    }));
+
+    return wikiDataOut;
+  } catch (err) {
+    throw err;
+  }
 }
-
 
 interface WithCounts {
   iri: string;
@@ -87,19 +91,27 @@ export async function getAllCountries(): Promise<WithCounts[]> {
   }
   GROUP BY ?external
   ORDER BY DESC(?numSeries)`;
-  const out = await sparqlQuery(Endpoints.LOQU, query);
+  try {
+    const out = await sparqlQuery(Endpoints.LOQU, query);
 
-  return out.map(bindings => ({
-    iri: bindings["external"].value,
-    numSeries: parseInt(bindings["numSeries"].value, 10),
-    numDataset: parseInt(bindings["numDataset"].value, 10),
-  }));
+    return out.map(bindings => ({
+      iri: bindings["external"].value,
+      numSeries: parseInt(bindings["numSeries"].value, 10),
+      numDataset: parseInt(bindings["numDataset"].value, 10),
+    }));
+  } catch (err) {
+    throw err;
+  }
 }
 
 /** We're including the wikidata just to make sure the client doesn't need another request. */
 export async function getEnrichedCountries() {
-  const countryIRIs = await getAllCountries();
+  try {
+    const countryIRIs = await getAllCountries();
 
-  const out = await getCountries(countryIRIs);
-  return out;
+    const out = await getCountries(countryIRIs);
+    return out;
+  } catch (error) {
+    throw error;
+  }
 }
